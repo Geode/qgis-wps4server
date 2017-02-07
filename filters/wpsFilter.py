@@ -659,7 +659,8 @@ class wpsFilter(QgsServerFilter):
                         opt_val = pywpsConfig.getConfigValue( 'qgis_processing', opt )
                         ProcessingConfig.setSettingValue( opt.upper(), opt_val )
                     # Reload algorithms
-                    Processing.loadAlgorithms()
+                    #Processing.loadAlgorithms()
+                    Processing.updateAlgsList()
                 # modify processes path and reload algorithms
                 if pywpsConfig.config.has_section( 'qgis' ) and pywpsConfig.config.has_option( 'qgis', 'processing_folder' ) :
                     processingPath = pywpsConfig.getConfigValue( 'qgis', 'processing_folder' )
@@ -685,8 +686,10 @@ class wpsFilter(QgsServerFilter):
                         ProcessingConfig.setSettingValue( 'SCRIPTS_FOLDER', os.path.join( processingPath, 'scripts' ) )
                         ProcessingConfig.setSettingValue( 'R_SCRIPTS_FOLDER', os.path.join( processingPath, 'rscripts' ) )
                         # Reload algorithms
-                        Processing.loadAlgorithms()
+                        #Processing.loadAlgorithms()
+                        Processing.updateAlgsList()
 
+                Processing.reloadProvider('model')
                 crsList = []
                 if pywpsConfig.config.has_section( 'qgis' ) and pywpsConfig.config.has_option( 'qgis', 'input_bbox_crss' ) :
                     inputBBoxCRSs = pywpsConfig.getConfigValue( 'qgis', 'input_bbox_crss' )
@@ -753,11 +756,12 @@ class wpsFilter(QgsServerFilter):
 
                 processes = [None] # if no processes found no processes return (deactivate default pywps process)
                 identifier = params.get('IDENTIFIER', '').lower()
-                for i in Processing.algs :
+                processingAlgs = Processing.algs()
+                for i in processingAlgs:
                     if providerList and i not in providerList :
                         continue
-                    QgsMessageLog.logMessage("provider "+i+" "+str(len(Processing.algs[i])))
-                    for m in Processing.algs[i]:
+                    QgsMessageLog.logMessage("provider "+i+" "+str(len(processingAlgs[i])))
+                    for m in processingAlgs[i]:
                         if identifier and identifier != m :
                             continue
                         if algList and m not in algList :
@@ -770,7 +774,7 @@ class wpsFilter(QgsServerFilter):
                         processes.append(QGISProcessFactory(m, projectPath, vectorLayers, rasterLayers, crsList))
 
                 #pywpsConfig.setConfigValue("server","outputPath", '/tmp/wpsoutputs')
-                #pywpsConfig.setConfigValue("server","logFile", '/tmp/pywps.log')
+                pywpsConfig.setConfigValue("server","logFile", '/tmp/pywps.log')
 
                 qgisaddress = self.serverInterface().getEnv('SERVER_NAME')+self.serverInterface().getEnv('SCRIPT_NAME')
                 if self.serverInterface().getEnv('HTTPS') :
